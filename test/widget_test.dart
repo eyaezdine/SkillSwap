@@ -4,6 +4,8 @@ import 'package:skillswap/core/theme/app_theme.dart';
 import 'package:skillswap/features/skills/data/services/category_firestore_service.dart';
 import 'package:skillswap/shared/enums/skill_type.dart';
 import 'package:skillswap/shared/models/category_model.dart';
+import 'package:skillswap/core/enums/enums.dart';
+import 'package:skillswap/features/sessions/domain/entities/session.dart';
 import 'package:skillswap/shared/models/skill_model.dart';
 import 'package:skillswap/shared/models/user_model.dart';
 
@@ -115,6 +117,37 @@ void main() {
   group('CloudinaryConfig tests', () {
     test('CloudinaryConfig defaults are recognized', () {
       expect(CloudinaryConfig.folder, 'skillswap/profile_images');
+    });
+  });
+
+  group('Session tests', () {
+    test('serializes to and from JSON with learner and notes', () {
+      final now = DateTime(2026, 11, 14, 10, 0);
+      final session = Session(
+        id: 's1',
+        skillSwapId: 'swap1',
+        instructorId: 'u1',
+        learnerId: 'u2',
+        skillId: 'skill1',
+        title: 'Intro to Flutter Widgets',
+        scheduledStartTime: now,
+        durationInMinutes: 60,
+        mode: SessionMode.online,
+        meetingLink: 'https://meet.google.com/abc-defg-hij',
+        status: SessionStatus.upcoming,
+        notes: 'Bring a laptop',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      expect(session.endTime, DateTime(2026, 11, 14, 11, 0));
+      expect(session.isSchedulable, isTrue);
+
+      final restored = Session.fromJson(session.toJson());
+      expect(restored.learnerId, 'u2');
+      expect(restored.meetingLink, session.meetingLink);
+      expect(restored.notes, 'Bring a laptop');
+      expect(restored.mode, SessionMode.online);
     });
   });
 

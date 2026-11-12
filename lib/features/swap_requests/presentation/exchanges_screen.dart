@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:skillswap/core/theme/app_theme.dart';
 import 'package:skillswap/features/auth/presentation/widgets/auth_error_banner.dart';
-import 'package:skillswap/features/sessions/domain/entities/skill_swap.dart';
+import 'package:skillswap/features/sessions/presentation/swap_details_screen.dart';
 import 'package:skillswap/features/skills/data/repositories/skill_repository.dart';
 import 'package:skillswap/features/swap_requests/data/repositories/swap_request_repository.dart';
 import 'package:skillswap/features/swap_requests/domain/entities/skill_swap_request.dart';
@@ -172,13 +172,15 @@ class _ExchangesScreenState extends State<ExchangesScreen> {
         );
         return;
       }
-      await showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: AppColors.surface,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => SwapDetailsScreen(
+            swap: swap,
+            currentUserId: widget.currentUserId,
+            userRepository: _userRepository,
+            skillRepository: _skillRepository,
+          ),
         ),
-        builder: (ctx) => _SwapDetailsSheet(swap: swap),
       );
     } catch (error) {
       if (!mounted) return;
@@ -441,93 +443,3 @@ class _CountBadge extends StatelessWidget {
   }
 }
 
-class _SwapDetailsSheet extends StatelessWidget {
-  const _SwapDetailsSheet({required this.swap});
-
-  final SkillSwap swap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Active swap',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.onBackground,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'This exchange is now active. Session scheduling will live here in the next module.',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.subtle.withAlpha(220),
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _DetailRow(label: 'Swap ID', value: swap.id),
-          _DetailRow(label: 'Request ID', value: swap.requestId),
-          _DetailRow(label: 'Status', value: swap.status.name),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 96,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.subtle,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.onBackground,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

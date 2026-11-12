@@ -3,11 +3,7 @@ import 'package:skillswap/core/enums/enums.dart';
 
 /// Represents an actual learning meeting between two users within a [SkillSwap].
 ///
-/// A [Session] is a concrete scheduled meeting that belongs to a [SkillSwap].
-/// One [SkillSwap] can have multiple [Session]s over time.
-///
 /// Firestore collection: `sessions/{id}`
-/// (or subcollection `swaps/{swapId}/sessions/{id}`).
 class Session {
   /// Unique identifier for this session (Firestore document ID).
   final String id;
@@ -16,10 +12,12 @@ class Session {
   final String skillSwapId;
 
   /// Firebase Auth uid of the user teaching this session.
-  /// Must match either `user1Id` or `user2Id` on the parent swap.
   final String instructorId;
 
-  /// Skill document ID being taught in this meeting (`skills/{skillId}`).
+  /// Firebase Auth uid of the user learning in this session.
+  final String learnerId;
+
+  /// Skill document ID being taught (`skills/{skillId}`).
   final String skillId;
 
   /// A descriptive title for this session (e.g. "Introduction to Flutter").
@@ -35,26 +33,29 @@ class Session {
   final SessionMode mode;
 
   /// The physical location of the meeting.
-  /// Required when [mode] is [SessionMode.inPerson] or [SessionMode.hybrid].
-  /// Null for fully online sessions.
   final String? location;
 
   /// The URL for the online meeting room (e.g. Google Meet, Zoom link).
-  /// Required when [mode] is [SessionMode.online] or [SessionMode.hybrid].
-  /// Null for fully in-person sessions.
   final String? meetingLink;
 
   /// The current status of the session.
   final SessionStatus status;
 
+  /// Optional notes shared between partners.
+  final String? notes;
+
   /// The date and time when this session record was created.
   final DateTime createdAt;
+
+  /// The date and time when this session record was last updated.
+  final DateTime updatedAt;
 
   const Session({
     required this.id,
     required this.skillSwapId,
     required this.instructorId,
-    required this.skillId,
+    required this.learnerId,
+    this.skillId = '',
     required this.title,
     required this.scheduledStartTime,
     required this.durationInMinutes,
@@ -62,7 +63,9 @@ class Session {
     this.location,
     this.meetingLink,
     required this.status,
+    this.notes,
     required this.createdAt,
+    required this.updatedAt,
   });
 
   /// Planned duration reconstructed from [durationInMinutes].
@@ -80,6 +83,12 @@ class Session {
   /// Returns `true` if the session has been rescheduled.
   bool get isRescheduled => status == SessionStatus.rescheduled;
 
+  /// Returns `true` if the session can still be edited or cancelled.
+  bool get isSchedulable =>
+      status == SessionStatus.upcoming ||
+      status == SessionStatus.confirmed ||
+      status == SessionStatus.rescheduled;
+
   /// Returns `true` if the session has ended (any terminal state).
   bool get isFinished =>
       status == SessionStatus.completed || status == SessionStatus.cancelled;
@@ -96,6 +105,7 @@ class Session {
       id: doc.id,
       skillSwapId: data['skillSwapId'] as String? ?? '',
       instructorId: data['instructorId'] as String? ?? '',
+      learnerId: data['learnerId'] as String? ?? '',
       skillId: data['skillId'] as String? ?? '',
       title: data['title'] as String? ?? '',
       scheduledStartTime: _parseDateTime(data['scheduledStartTime']),
@@ -104,7 +114,9 @@ class Session {
       location: data['location'] as String?,
       meetingLink: data['meetingLink'] as String?,
       status: SessionStatus.fromJson(data['status'] as String?),
+      notes: data['notes'] as String?,
       createdAt: _parseDateTime(data['createdAt']),
+      updatedAt: _parseDateTime(data['updatedAt'] ?? data['createdAt']),
     );
   }
 
@@ -113,6 +125,7 @@ class Session {
       id: json['id'] as String? ?? '',
       skillSwapId: json['skillSwapId'] as String? ?? '',
       instructorId: json['instructorId'] as String? ?? '',
+      learnerId: json['learnerId'] as String? ?? '',
       skillId: json['skillId'] as String? ?? '',
       title: json['title'] as String? ?? '',
       scheduledStartTime: _parseDateTime(json['scheduledStartTime']),
@@ -121,7 +134,9 @@ class Session {
       location: json['location'] as String?,
       meetingLink: json['meetingLink'] as String?,
       status: SessionStatus.fromJson(json['status'] as String?),
+      notes: json['notes'] as String?,
       createdAt: _parseDateTime(json['createdAt']),
+      updatedAt: _parseDateTime(json['updatedAt'] ?? json['createdAt']),
     );
   }
 
@@ -129,15 +144,18 @@ class Session {
     return {
       'skillSwapId': skillSwapId,
       'instructorId': instructorId,
+      'learnerId': learnerId,
       'skillId': skillId,
       'title': title,
       'scheduledStartTime': Timestamp.fromDate(scheduledStartTime),
       'durationInMinutes': durationInMinutes,
       'mode': mode.toJson(),
-      if (location != null) 'location': location,
-      if (meetingLink != null) 'meetingLink': meetingLink,
+      'location': location,
+      'meetingLink': meetingLink,
       'status': status.toJson(),
+      'notes': notes,
       'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
     };
   }
 
@@ -146,6 +164,7 @@ class Session {
       'id': id,
       'skillSwapId': skillSwapId,
       'instructorId': instructorId,
+      'learnerId': learnerId,
       'skillId': skillId,
       'title': title,
       'scheduledStartTime': scheduledStartTime.toIso8601String(),
@@ -154,15 +173,17 @@ class Session {
       if (location != null) 'location': location,
       if (meetingLink != null) 'meetingLink': meetingLink,
       'status': status.toJson(),
+      if (notes != null) 'notes': notes,
       'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
-  /// Creates a copy of this entity with the given fields replaced.
   Session copyWith({
     String? id,
     String? skillSwapId,
     String? instructorId,
+    String? learnerId,
     String? skillId,
     String? title,
     DateTime? scheduledStartTime,
@@ -171,14 +192,18 @@ class Session {
     String? location,
     String? meetingLink,
     SessionStatus? status,
+    String? notes,
     DateTime? createdAt,
+    DateTime? updatedAt,
     bool clearLocation = false,
     bool clearMeetingLink = false,
+    bool clearNotes = false,
   }) {
     return Session(
       id: id ?? this.id,
       skillSwapId: skillSwapId ?? this.skillSwapId,
       instructorId: instructorId ?? this.instructorId,
+      learnerId: learnerId ?? this.learnerId,
       skillId: skillId ?? this.skillId,
       title: title ?? this.title,
       scheduledStartTime: scheduledStartTime ?? this.scheduledStartTime,
@@ -187,7 +212,9 @@ class Session {
       location: clearLocation ? null : (location ?? this.location),
       meetingLink: clearMeetingLink ? null : (meetingLink ?? this.meetingLink),
       status: status ?? this.status,
+      notes: clearNotes ? null : (notes ?? this.notes),
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -213,7 +240,7 @@ class Session {
         'id: $id, '
         'skillSwapId: $skillSwapId, '
         'instructorId: $instructorId, '
-        'skillId: $skillId, '
+        'learnerId: $learnerId, '
         'title: $title, '
         'scheduledStartTime: $scheduledStartTime, '
         'durationInMinutes: $durationInMinutes, '
