@@ -5,6 +5,7 @@ import 'package:skillswap/features/home/presentation/discover_screen.dart';
 import 'package:skillswap/features/profile/presentation/profile_screen.dart';
 import 'package:skillswap/features/skills/data/repositories/skill_repository.dart';
 import 'package:skillswap/features/skills/presentation/my_skills_screen.dart';
+import 'package:skillswap/features/swap_requests/presentation/exchanges_screen.dart';
 import 'package:skillswap/features/user/data/repositories/user_repository.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -91,11 +92,10 @@ class _HomeScreenState extends State<HomeScreen> {
         userId: user.uid,
         skillRepository: _skillRepository,
       ),
-      _buildPlaceholderTab(
-        icon: Icons.swap_horiz_rounded,
-        title: 'Skill Exchanges',
-        subtitle:
-            'Accepted skill swaps and learning sessions will appear here once connected.',
+      ExchangesScreen(
+        currentUserId: user.uid,
+        userRepository: _userRepository,
+        skillRepository: _skillRepository,
       ),
       _buildPlaceholderTab(
         icon: Icons.chat_bubble_outline_rounded,
