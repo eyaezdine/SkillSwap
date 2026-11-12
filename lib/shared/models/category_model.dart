@@ -1,22 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Represents a category used to organise skills in SkillSwap.
-///
-/// Each [SkillModel] references a category through its [categoryId] field.
-///
-/// Example categories: Programming, Languages, Design, Music, Cooking,
-/// Sports, Business, Photography.
 class CategoryModel {
-  /// Firestore-generated document ID.
   final String id;
-
-  /// Display name of the category (e.g. "Programming", "Music").
   final String name;
-
-  /// Brief explanation of what this category covers.
   final String description;
-
-  /// Optional Firebase Storage download URL for the category's cover image.
   final String? imageUrl;
 
   const CategoryModel({
@@ -26,11 +13,6 @@ class CategoryModel {
     this.imageUrl,
   });
 
-  // ---------------------------------------------------------------------------
-  // Firestore deserialization
-  // ---------------------------------------------------------------------------
-
-  /// Creates a [CategoryModel] from a Firestore document snapshot.
   factory CategoryModel.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> doc,
   ) {
@@ -43,7 +25,6 @@ class CategoryModel {
     );
   }
 
-  /// Creates a [CategoryModel] from a plain JSON / Map (e.g. from an HTTP API).
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
       id: json['id'] as String? ?? '',
@@ -53,13 +34,6 @@ class CategoryModel {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Firestore serialization
-  // ---------------------------------------------------------------------------
-
-  /// Converts this model to a map suitable for writing to Firestore.
-  ///
-  /// Note: [id] is excluded because it is the Firestore document ID.
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,
@@ -68,7 +42,6 @@ class CategoryModel {
     };
   }
 
-  /// Converts this model to a plain JSON map (e.g. for HTTP requests).
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -78,11 +51,6 @@ class CategoryModel {
     };
   }
 
-  // ---------------------------------------------------------------------------
-  // copyWith
-  // ---------------------------------------------------------------------------
-
-  /// Returns a copy of this [CategoryModel] with specific fields replaced.
   CategoryModel copyWith({
     String? id,
     String? name,
@@ -98,13 +66,8 @@ class CategoryModel {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Object overrides
-  // ---------------------------------------------------------------------------
-
   @override
-  String toString() =>
-      'CategoryModel(id: $id, name: $name)';
+  String toString() => 'CategoryModel(id: $id, name: $name)';
 
   @override
   bool operator ==(Object other) =>
@@ -113,4 +76,3 @@ class CategoryModel {
   @override
   int get hashCode => id.hashCode;
 }
-
