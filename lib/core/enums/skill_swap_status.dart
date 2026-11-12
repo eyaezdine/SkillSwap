@@ -9,5 +9,14 @@ enum SkillSwapStatus {
   completed,
 
   /// The swap was cancelled after being accepted.
-  cancelled,
+  cancelled;
+
+  String toJson() => name;
+
+  static SkillSwapStatus fromJson(String? value) {
+    return SkillSwapStatus.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => SkillSwapStatus.active,
+    );
+  }
 }

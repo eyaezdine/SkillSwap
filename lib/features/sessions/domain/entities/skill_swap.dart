@@ -1,28 +1,29 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:skillswap/core/enums/enums.dart';
-
 
 /// Represents an accepted agreement between two users to exchange skills.
 ///
 /// A [SkillSwap] is created once a [SkillSwapRequest] has been accepted.
-/// It tracks the lifecycle of the actual skill exchange session between
-/// the two parties.
+/// It tracks the lifecycle of the actual skill exchange between the two parties.
+///
+/// Firestore collection: `swaps/{id}`
 class SkillSwap {
-  /// Unique identifier for this swap.
+  /// Unique identifier for this swap (Firestore document ID).
   final String id;
 
-  /// The ID of the [SkillSwapRequest] that originated this swap.
+  /// Document ID of the originating request (`swap_requests/{requestId}`).
   final String requestId;
 
-  /// The ID of the first participant (originally the request sender).
+  /// Firebase Auth uid of the first participant (request sender).
   final String user1Id;
 
-  /// The ID of the second participant (originally the request receiver).
+  /// Firebase Auth uid of the second participant (request receiver).
   final String user2Id;
 
-  /// The ID of the skill that user1 is offering to user2.
+  /// Skill document ID that user1 is offering (`skills/{skillId}`).
   final String skillOfferedByUser1;
 
-  /// The ID of the skill that user2 is offering to user1.
+  /// Skill document ID that user2 is offering (`skills/{skillId}`).
   final String skillOfferedByUser2;
 
   /// The current status of the swap session.
@@ -36,6 +37,9 @@ class SkillSwap {
   /// Null if the session has not yet been completed.
   final DateTime? completedAt;
 
+  /// The date and time when this swap record was created.
+  final DateTime createdAt;
+
   const SkillSwap({
     required this.id,
     required this.requestId,
@@ -46,6 +50,7 @@ class SkillSwap {
     required this.status,
     this.startedAt,
     this.completedAt,
+    required this.createdAt,
   });
 
   /// Returns `true` if the swap is currently active.
@@ -69,6 +74,68 @@ class SkillSwap {
     return completedAt!.difference(startedAt!);
   }
 
+  factory SkillSwap.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data()!;
+    return SkillSwap(
+      id: doc.id,
+      requestId: data['requestId'] as String? ?? '',
+      user1Id: data['user1Id'] as String? ?? '',
+      user2Id: data['user2Id'] as String? ?? '',
+      skillOfferedByUser1: data['skillOfferedByUser1'] as String? ?? '',
+      skillOfferedByUser2: data['skillOfferedByUser2'] as String? ?? '',
+      status: SkillSwapStatus.fromJson(data['status'] as String?),
+      startedAt: _parseNullableDateTime(data['startedAt']),
+      completedAt: _parseNullableDateTime(data['completedAt']),
+      createdAt: _parseDateTime(data['createdAt']),
+    );
+  }
+
+  factory SkillSwap.fromJson(Map<String, dynamic> json) {
+    return SkillSwap(
+      id: json['id'] as String? ?? '',
+      requestId: json['requestId'] as String? ?? '',
+      user1Id: json['user1Id'] as String? ?? '',
+      user2Id: json['user2Id'] as String? ?? '',
+      skillOfferedByUser1: json['skillOfferedByUser1'] as String? ?? '',
+      skillOfferedByUser2: json['skillOfferedByUser2'] as String? ?? '',
+      status: SkillSwapStatus.fromJson(json['status'] as String?),
+      startedAt: _parseNullableDateTime(json['startedAt']),
+      completedAt: _parseNullableDateTime(json['completedAt']),
+      createdAt: _parseDateTime(json['createdAt']),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'requestId': requestId,
+      'user1Id': user1Id,
+      'user2Id': user2Id,
+      'skillOfferedByUser1': skillOfferedByUser1,
+      'skillOfferedByUser2': skillOfferedByUser2,
+      'status': status.toJson(),
+      'startedAt':
+          startedAt != null ? Timestamp.fromDate(startedAt!) : null,
+      'completedAt':
+          completedAt != null ? Timestamp.fromDate(completedAt!) : null,
+      'createdAt': Timestamp.fromDate(createdAt),
+    };
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'requestId': requestId,
+      'user1Id': user1Id,
+      'user2Id': user2Id,
+      'skillOfferedByUser1': skillOfferedByUser1,
+      'skillOfferedByUser2': skillOfferedByUser2,
+      'status': status.toJson(),
+      'startedAt': startedAt?.toIso8601String(),
+      'completedAt': completedAt?.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
   /// Creates a copy of this entity with the given fields replaced.
   SkillSwap copyWith({
     String? id,
@@ -80,6 +147,9 @@ class SkillSwap {
     SkillSwapStatus? status,
     DateTime? startedAt,
     DateTime? completedAt,
+    DateTime? createdAt,
+    bool clearStartedAt = false,
+    bool clearCompletedAt = false,
   }) {
     return SkillSwap(
       id: id ?? this.id,
@@ -89,9 +159,22 @@ class SkillSwap {
       skillOfferedByUser1: skillOfferedByUser1 ?? this.skillOfferedByUser1,
       skillOfferedByUser2: skillOfferedByUser2 ?? this.skillOfferedByUser2,
       status: status ?? this.status,
-      startedAt: startedAt ?? this.startedAt,
-      completedAt: completedAt ?? this.completedAt,
+      startedAt: clearStartedAt ? null : (startedAt ?? this.startedAt),
+      completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+      createdAt: createdAt ?? this.createdAt,
     );
+  }
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
+    return DateTime.now();
+  }
+
+  static DateTime? _parseNullableDateTime(dynamic value) {
+    if (value == null) return null;
+    return _parseDateTime(value);
   }
 
   @override
@@ -112,7 +195,7 @@ class SkillSwap {
         'user2Id: $user2Id, '
         'skillOfferedByUser1: $skillOfferedByUser1, '
         'skillOfferedByUser2: $skillOfferedByUser2, '
-        'status: $status, '
+        'status: ${status.name}, '
         'startedAt: $startedAt, '
         'completedAt: $completedAt'
         ')';

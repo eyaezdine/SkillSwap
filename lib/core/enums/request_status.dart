@@ -15,5 +15,14 @@ enum RequestStatus {
   cancelled,
 
   /// The exchange was finalized and both parties completed the swap.
-  completed,
+  completed;
+
+  String toJson() => name;
+
+  static RequestStatus fromJson(String? value) {
+    return RequestStatus.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => RequestStatus.pending,
+    );
+  }
 }

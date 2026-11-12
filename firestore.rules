@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // Users & Profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Skills
+    match /skills/{skillId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isAuthenticated()
+        && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Categories
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated();
+    }
+
+    // Swap Requests
+    match /swap_requests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.senderId == request.auth.uid ||
+        resource.data.receiverId == request.auth.uid
+      );
+      allow delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
+    }
+
+    // Active Swaps
+    match /swaps/{swapId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (
+        request.resource.data.user1Id == request.auth.uid ||
+        request.resource.data.user2Id == request.auth.uid
+      );
+    }
+
+    // Sessions
+    match /sessions/{sessionId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+  }
+}

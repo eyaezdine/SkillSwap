@@ -15,5 +15,14 @@ enum SessionStatus {
   cancelled,
 
   /// The session was successfully held and concluded.
-  completed,
+  completed;
+
+  String toJson() => name;
+
+  static SessionStatus fromJson(String? value) {
+    return SessionStatus.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => SessionStatus.upcoming,
+    );
+  }
 }
