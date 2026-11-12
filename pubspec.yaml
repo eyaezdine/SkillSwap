@@ -44,6 +44,9 @@ dependencies:
   # Local storage
   shared_preferences: ^2.3.2
 
+  # Media & images
+  image_picker: ^1.1.2
+
   # Networking & serialization
   http: ^1.2.2
 
