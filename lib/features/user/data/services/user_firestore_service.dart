@@ -34,4 +34,21 @@ class UserFirestoreService {
       return UserModel.fromFirestore(doc);
     });
   }
+
+  Stream<List<UserModel>> watchAllUsers({String? excludeUserId}) {
+    return _usersRef.snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => UserModel.fromFirestore(doc))
+          .where((user) => excludeUserId == null || user.id != excludeUserId)
+          .toList();
+    });
+  }
+
+  Future<List<UserModel>> getAllUsers({String? excludeUserId}) async {
+    final snapshot = await _usersRef.get();
+    return snapshot.docs
+        .map((doc) => UserModel.fromFirestore(doc))
+        .where((user) => excludeUserId == null || user.id != excludeUserId)
+        .toList();
+  }
 }

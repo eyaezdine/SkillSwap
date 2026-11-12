@@ -24,6 +24,12 @@ class UserRepository {
   Stream<UserModel?> watchUserProfile(String uid) =>
       _service.watchUserProfile(uid);
 
+  Stream<List<UserModel>> watchAllUsers({String? excludeUserId}) =>
+      _service.watchAllUsers(excludeUserId: excludeUserId);
+
+  Future<List<UserModel>> getAllUsers({String? excludeUserId}) =>
+      _service.getAllUsers(excludeUserId: excludeUserId);
+
   Future<String> uploadProfilePicture({
     required String uid,
     required Uint8List bytes,

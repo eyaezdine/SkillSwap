@@ -25,6 +25,29 @@ class ProfileScreen extends StatelessWidget {
     return '${months[dt.month - 1]} ${dt.year}';
   }
 
+  Future<void> _navigateToEditProfile(
+    BuildContext context,
+    UserModel user,
+  ) async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfileScreen(
+          user: user,
+          userRepository: userRepository,
+        ),
+      ),
+    );
+    if (updated == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully!'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,17 +63,7 @@ class ProfileScreen extends StatelessWidget {
                 return IconButton(
                   icon: const Icon(Icons.edit_outlined),
                   tooltip: 'Edit Profile',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => EditProfileScreen(
-                          user: user,
-                          userRepository: userRepository,
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: () => _navigateToEditProfile(context, user),
                 );
               },
             ),
@@ -152,17 +165,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     icon: const Icon(Icons.edit, size: 18),
                     label: const Text('Edit Profile'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => EditProfileScreen(
-                            user: user,
-                            userRepository: userRepository,
-                          ),
-                        ),
-                      );
-                    },
+                    onPressed: () => _navigateToEditProfile(context, user),
                   ),
                 const SizedBox(height: 28),
                 Card(

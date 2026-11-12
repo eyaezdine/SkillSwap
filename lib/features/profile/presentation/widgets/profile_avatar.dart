@@ -27,38 +27,64 @@ class ProfileAvatar extends StatelessWidget {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
+  Widget _buildInitials() {
+    return Container(
+      width: radius * 2,
+      height: radius * 2,
+      decoration: const BoxDecoration(
+        color: AppColors.primary,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        _initials,
+        style: TextStyle(
+          fontSize: radius * 0.75,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget avatarContent;
 
-    if (imageUrl != null && imageUrl!.isNotEmpty) {
-      avatarContent = CircleAvatar(
-        radius: radius,
-        backgroundColor: AppColors.primary.withAlpha(30),
-        backgroundImage: NetworkImage(imageUrl!),
-        onBackgroundImageError: (error, stackTrace) {},
-        child: Text(
-          _initials,
-          style: TextStyle(
-            fontSize: radius * 0.75,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+    final trimmedUrl = imageUrl?.trim();
+    if (trimmedUrl != null && trimmedUrl.isNotEmpty) {
+      avatarContent = ClipOval(
+        child: SizedBox(
+          width: radius * 2,
+          height: radius * 2,
+          child: Image.network(
+            trimmedUrl,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                width: radius * 2,
+                height: radius * 2,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withAlpha(30),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: radius * 0.6,
+                  height: radius * 0.6,
+                  child: const CircularProgressIndicator(strokeWidth: 2),
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return _buildInitials();
+            },
           ),
         ),
       );
     } else {
-      avatarContent = CircleAvatar(
-        radius: radius,
-        backgroundColor: AppColors.primary,
-        child: Text(
-          _initials,
-          style: TextStyle(
-            fontSize: radius * 0.75,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      );
+      avatarContent = _buildInitials();
     }
 
     if (!showEditBadge && onTap == null) {

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skillswap/core/constants/cloudinary_config.dart';
 import 'package:skillswap/core/theme/app_theme.dart';
+import 'package:skillswap/features/skills/data/services/category_firestore_service.dart';
 import 'package:skillswap/shared/enums/skill_type.dart';
 import 'package:skillswap/shared/models/category_model.dart';
 import 'package:skillswap/shared/models/skill_model.dart';
@@ -114,6 +115,23 @@ void main() {
   group('CloudinaryConfig tests', () {
     test('CloudinaryConfig defaults are recognized', () {
       expect(CloudinaryConfig.folder, 'skillswap/profile_images');
+    });
+  });
+
+  group('CategoryFirestoreService tests', () {
+    test('default categories list contains expected standard categories', () {
+      final names = CategoryFirestoreService.defaultCategories
+          .map((c) => c['name'])
+          .toList();
+      expect(names, contains('Programming'));
+      expect(names, contains('Languages'));
+      expect(names, contains('Design'));
+      expect(names, contains('Music'));
+      expect(names, contains('Cooking'));
+      expect(names, contains('Sports'));
+      expect(names, contains('Business'));
+      expect(names, contains('Photography'));
+      expect(names.length, 8);
     });
   });
 }
